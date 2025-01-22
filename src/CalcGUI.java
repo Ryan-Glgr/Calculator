@@ -1,14 +1,14 @@
 import javax.swing.*;
 import java.awt.*;
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class CalcGUI {
 
+    public JFrame frame;
     public ArrayList<JPanel> buttonRows;
     public JPanel displayPanel;
     public JTextArea displayArea;
-    public JPanel buttonPanel;
+    public JPanel guiPanel;
     public StringBuilder equation;
     public boolean inverseMode = false;         // used for inverse sin cos, etc.
     public ArrayList<JButton> buttonsWithNamesToChange;  // these are the buttons whose labels we change when we click the mode button. sin inverse, () become {} and so on.
@@ -17,77 +17,96 @@ public class CalcGUI {
 
 
     public CalcGUI() {
-
         equation = new StringBuilder();
-        buttonRows = new ArrayList<>();
         buttonsWithNamesToChange = new ArrayList<>();
+        buttonRows = new ArrayList<>();
+        displayArea = new JTextArea(2, 20); // Example display area dimensions
 
-        // initialize our rows for the math functions
-        // it will go like this.
-        // inverseMode button      log base 10/ln          power/root
-        // +                        -                   *
-        // /                        (                   )
+        // Make our list of panels
+        makeButtonRows();
 
+        // Create display panel with a stupid grid layout, so that the display fills the whole box
+        displayPanel = new JPanel(new GridLayout(1,1));
+        displayPanel.add(displayArea);
 
-        // the reason that they are fields, is so that we can update them very easily from the inverse mode action listener.
+        // Create the main panel (button panel with grid layout)
+        guiPanel = new JPanel(new GridLayout(buttonRows.size() + 1, 1));
+        guiPanel.add(displayPanel);
+        for (JPanel p : buttonRows) {
+            guiPanel.add(p);
+        }
 
-        buttonRows = makeButtonRows();
-        // make our button panel with a new gridLayout. we are just going to have one column per row, since we are making a whole row of buttons at once.
-        buttonPanel = new JPanel(new GridLayout(buttonRows.size(), 1));
+        // Create the JFrame (main window)
+        frame = new JFrame("Calculator");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Exit the application when the window is closed
+        frame.setSize(400, 600); // Set the size of the window (adjust as needed)
+        frame.setLayout(new BorderLayout()); // Use a BorderLayout for the frame
+        frame.add(guiPanel, BorderLayout.CENTER); // Add the main panel to the center
+
+        // Make the window visible
+        frame.setVisible(true);
     }
 
+    public void makeButtonRows() {
 
-    public ArrayList<JPanel> makeButtonRows() {
-        // adding the digits buttons.
-        ArrayList<JPanel> rows = new ArrayList<>();
-
+        buttonRows = new ArrayList<>();
         // add our six trig functions
-        rows.add(makeTrigButtons(new String[]{"SIN", "COS", "TAN"}));
-        rows.add(makeTrigButtons(new String[]{"CSC", "SEC", "COT"}));
+        buttonRows.add(makeTrigButtons(new String[]{"SIN", "COS", "TAN"}));
+        buttonRows.add(makeTrigButtons(new String[]{"CSC", "SEC", "COT"}));
+
         // make our extra buttons for log, power, mode
-        rows.add(makeExtraButtons());
+        buttonRows.add(makeExtraButtons());
+        // + - * buttons
+        buttonRows.add(makeOperatorButtons());
 
-        // make our math functions row
+        // / ( ) buttons
+        buttonRows.add(makeOtherOperators());
+
         // add all our digit buttons now.
-        rows.add(makeDigitButtons(new String[]{"1", "2", "3"}));
-        rows.add(makeDigitButtons(new String[]{"4", "5", "6"}));
-        rows.add(makeDigitButtons(new String[]{"7", "8", "9"}));
-        rows.add(makeDigitButtons(new String[]{"0", ".", "CLEAR"}));
+        buttonRows.add(makeDigitButtons(new String[]{"1", "2", "3"}));
+        buttonRows.add(makeDigitButtons(new String[]{"4", "5", "6"}));
+        buttonRows.add(makeDigitButtons(new String[]{"7", "8", "9"}));
+        buttonRows.add(makeDigitButtons(new String[]{"0", ".", "CLEAR"}));
 
-        return rows;
-
+        // make the enter button on it's own panel so it's full size.
+        JPanel enterButtonPanel = new JPanel(new GridLayout(1, 1));
+        JButton enterButton = new JButton("Enter");
+        enterButton.addActionListener(e -> {
+            displayArea.setText(Computations.evaluateExpression(equation.toString()));
+        });
+        enterButtonPanel.add(enterButton);
+        buttonRows.add(enterButtonPanel);
     }
 
-    // we must catch the parsing error that is possible where if we have 123~123 that should be a syntax error.
+    // we must catch the parsing error that is possible where if we have 123ARC123 that should be a syntax error.
     // we will just print out the syntax error just like a regular calculator does.
     public JPanel makeDigitButtons(String[] buttonLabels) {
 
         JPanel row = new JPanel();
-        row.setLayout(new GridLayout(buttonLabels.length, 1));
+        row.setLayout(new GridLayout(1, buttonLabels.length));
         for (String buttonLabel : buttonLabels) {
             JButton button = new JButton(buttonLabel);
             // now we add our action listener, all it does, is
             button.addActionListener(e -> {
 
                 // if the button is the clear button, then we just clear, obviously.
-                if (button.getText().equals("CLEAR"))
+                if (button.getText().equals("CLEAR")) {
                     equation.delete(0, equation.length());
+                }
                 else {
-                    if (equation.isEmpty())
+
+                    if (equation.isEmpty()){
                         equation.append(button.getText());
-
-                    else if (Character.isDigit(equation.charAt(equation.length() - 1))) {
-
-                        // if we're adding digits, add it without a space.
-                        // if we're adding something that's not a digit, we just add a space then the thing.
-                        if (Character.isDigit(button.getText().charAt(0)) || button.getText().equals("."))
-                            equation.append(button.getText());
-                        else
-                            equation.append(" " + button.getText());
                     }
-                    // if it's not a digit at the end, we can just simply add the button we pushed.
-                    else
-                        equation.append(" " + button.getText());
+                    else{
+                        char lastChar = equation.charAt(equation.length() - 1);
+                        if (Character.isDigit(lastChar) || lastChar == '.'){
+                            equation.append(button.getText());
+                        }
+                        else{
+                            equation.append(" " + button.getText());
+                        }
+                    }
                 }
                 displayArea.setText(equation.toString());
             });
@@ -98,7 +117,7 @@ public class CalcGUI {
 
     public JPanel makeTrigButtons(String[] buttonLabels){
         JPanel row = new JPanel();
-        row.setLayout(new GridLayout(buttonLabels.length, 1));
+        row.setLayout(new GridLayout(1, buttonLabels.length));
 
         for (int i = 0; i < buttonLabels.length; i++) {
             JButton button = new JButton(buttonLabels[i]);
@@ -116,7 +135,7 @@ public class CalcGUI {
     public JPanel makeExtraButtons(){
 
         JPanel row = new JPanel();
-        row.setLayout(new GridLayout(3, 1));
+        row.setLayout(new GridLayout(1, 3));
 
         JButton modeButton = new JButton("MODE");
         modeButton.addActionListener(e -> {
@@ -138,35 +157,113 @@ public class CalcGUI {
 
         buttonsWithNamesToChange.add(logButton);
         buttonsWithNamesToChange.add(powerButton);
+
+        row.add(modeButton);
+        row.add(logButton);
+        row.add(powerButton);
+
+        return row;
+    }
+
+    public JPanel makeOperatorButtons(){
+        JPanel row = new JPanel();
+        row.setLayout(new GridLayout(1, 3));
+
+        JButton addButton = new JButton("+");
+        addButton.addActionListener(e -> {
+            equation.append(" " + addButton.getText() + " ");
+            displayArea.setText(equation.toString());
+        });
+
+        JButton subButton = new JButton("-");
+        subButton.addActionListener(e -> {
+            equation.append(" " + subButton.getText());
+            displayArea.setText(equation.toString());
+        });
+
+        JButton mulButton = new JButton("*");
+        mulButton.addActionListener(e -> {
+           equation.append(" " + mulButton.getText());
+           displayArea.setText(equation.toString());
+        });
+        row.add(addButton);
+        row.add(subButton);
+        row.add(mulButton);
+        
+        return row;
+    }
+
+    public JPanel makeOtherOperators(){
+
+        JPanel row = new JPanel();
+        row.setLayout(new GridLayout(1, 3));
+
+        JButton divideButton = new JButton("/");
+        divideButton.addActionListener(e -> {
+            equation.append(" " + divideButton.getText() + " ");
+            displayArea.setText(equation.toString());
+        });
+
+        JButton leftParanthesisButton = new JButton("(");
+        leftParanthesisButton.addActionListener(e -> {
+            equation.append(leftParanthesisButton.getText());
+            displayArea.setText(equation.toString());
+        });
+
+        JButton rightParanthesisButton = new JButton(")");
+        rightParanthesisButton.addActionListener(e -> {
+            equation.append(rightParanthesisButton.getText());
+            displayArea.setText(equation.toString());
+        });
+
+        row.add(divideButton);
+        row.add(leftParanthesisButton);
+        row.add(rightParanthesisButton);
+
+        // these two flip flop to curly braces as well.
+        buttonsWithNamesToChange.add(leftParanthesisButton);
+        buttonsWithNamesToChange.add(rightParanthesisButton);
         return row;
     }
 
     // function that is called by our mode button, which updates all the labels of buttons with multiple functions
     public void updateButtonLabels(){
-
         for(JButton button : buttonsWithNamesToChange){
-            // check through all the possible values, and flip from sin to inverse sin, and so on.
+            // check through all the possible values, and flip from sin to arc sin, and so on.
             switch (button.getText()) {
-                case "SIN" -> button.setText("INVERSE\nSIN");
-                case "INVERSE\nSIN" -> button.setText("SIN");
-                case "COS" -> button.setText("INVERSE\nCOS");
-                case "INVERSE\nCOS" -> button.setText("COS");
-                case "TAN" -> button.setText("INVERSE\nTAN");
-                case "INVERSE\nTAN" -> button.setText("TAN");
-                case "CSC" -> button.setText("INVERSE\nCSC");
-                case "INVERSE\nCSC" -> button.setText("CSC");
-                case "SEC" -> button.setText("INVERSE\nSEC");
-                case "COT" -> button.setText("INVERSE\nCOT");
-                case "INVERSE\nCOT" -> button.setText("COT");
+                case "SIN" -> button.setText("ARCSIN");
+                case "ARCSIN" -> button.setText("SIN");
+                
+                case "COS" -> button.setText("ARCCOS");
+                case "ARCCOS" -> button.setText("COS");
+                
+                case "TAN" -> button.setText("ARCTAN");
+                case "ARCTAN" -> button.setText("TAN");
+                
+                case "CSC" -> button.setText("ARCCSC");
+                case "ARCCSC" -> button.setText("CSC");
+                
+                case "SEC" -> button.setText("ARCSEC");
+                case "ARCSEC" -> button.setText("SEC");
+                
+                case "COT" -> button.setText("ARCCOT");
+                case "ARCCOT" -> button.setText("COT");
+                
                 case "LOG" -> button.setText("LN");
                 case "LN" -> button.setText("LOG");
+                
                 case "^" -> button.setText("SQRT");
                 case "SQRT" -> button.setText("^");
-                default -> {
-                }
+
+                case "(" -> button.setText("{");
+                case "{" -> button.setText("(");
+
+                case ")" -> button.setText("}");
+                case "}" -> button.setText(")");
+
+                default -> {}
             }
         }
     }
-
 
 }

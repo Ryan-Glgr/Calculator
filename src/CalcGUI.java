@@ -204,25 +204,25 @@ public class CalcGUI {
             displayArea.setText(equation.toString());
         });
 
-        JButton leftParanthesisButton = new JButton("(");
-        leftParanthesisButton.addActionListener(e -> {
-            equation.append(leftParanthesisButton.getText());
+        JButton leftParenthesisButton = new JButton("(");
+        leftParenthesisButton.addActionListener(e -> {
+            equation.append(" " + leftParenthesisButton.getText());
             displayArea.setText(equation.toString());
         });
 
-        JButton rightParanthesisButton = new JButton(")");
-        rightParanthesisButton.addActionListener(e -> {
-            equation.append(rightParanthesisButton.getText());
+        JButton rightParenthesisButton = new JButton(")");
+        rightParenthesisButton.addActionListener(e -> {
+            equation.append(" " + rightParenthesisButton.getText());
             displayArea.setText(equation.toString());
         });
 
         row.add(divideButton);
-        row.add(leftParanthesisButton);
-        row.add(rightParanthesisButton);
+        row.add(leftParenthesisButton);
+        row.add(rightParenthesisButton);
 
         // these two flip flop to curly braces as well.
-        buttonsWithNamesToChange.add(leftParanthesisButton);
-        buttonsWithNamesToChange.add(rightParanthesisButton);
+        buttonsWithNamesToChange.add(leftParenthesisButton);
+        buttonsWithNamesToChange.add(rightParenthesisButton);
         return row;
     }
 

@@ -8,14 +8,14 @@ public class Computations {
     private static HashMap<String, Integer> precedenceMapping;
 
     public static void initialize(){
-
         precedenceMapping = new HashMap<>();
         precedenceMapping.put("+", 1);
         precedenceMapping.put("-", 1);
         precedenceMapping.put("*", 2);
         precedenceMapping.put("/", 2);
-        precedenceMapping.put("^", 3);
-        precedenceMapping.put("SQRT", 3);
+        precedenceMapping.put("NEG", 4);
+        precedenceMapping.put("^", 4);
+        precedenceMapping.put("SQRT", 4);
         precedenceMapping.put("LOG", 4);
         precedenceMapping.put("LN", 4);
         precedenceMapping.put("SIN", 4);
@@ -41,65 +41,113 @@ public class Computations {
         return precedenceMapping.containsKey(op);
     }
 
-    private static String convertToPostFix(String input){
+    private static String convertToPostFix(String input) {
 
-        /* TODO: handle negations here. When we come across a minus, we check if it is a negation or a subtraction. It is
-        * negation if we look at the previous token and it is number or like a ) then we are working with subtraction. else its negation.
-        * to handle negation, we just slap a - on the front of the next number.
-        */
-        
-        // stupid regex to split on any whitespace.
-        String[] tokens = input.split("\\s+");
+        // Split input into tokens based on whitespace trim because we may have leading whitespace.
+        String[] tokens = input.trim().split("\\s+");
         Stack<String> operators = new Stack<>();
         StringBuilder postFix = new StringBuilder();
 
-        for (String token : tokens) {
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i];
+            System.out.println("TOKEN " + token + " i = " + i);
+
             if (isOperator(token)) {
-                System.out.println(token);
-                // SPECIAL CASES, THE BRACKETS.
-                // WHEN WE FIND AN OPENING BRACKET, STRAIGHT TO THE STACK
+                // Handle parentheses and curly braces specially
                 if (token.equals("(") || token.equals("{")) {
                     operators.push(token);
                     continue;
                 }
 
-                // WHEN WE FIND A CLOSING, EMPTY IT UNTIL WE FIND IT'S PARTNER
-                if (token.equals(")")){
-                    while(!operators.peek().equals("(")){
-                        postFix.append(operators.pop() + " ");
-                    }
-                    operators.pop();
-                    continue;
-                }
-                // same thing as parenthesis
-                if (token.equals("}")){
-                    while(!operators.peek().equals("{")){
+                // we keep popping stuff off until we find the match
+                if (token.equals(")")) {
+                    while (!operators.peek().equals("(")) {
                         postFix.append(operators.pop() + " ");
                     }
                     operators.pop();
                     continue;
                 }
 
-                while (!operators.isEmpty() && precedenceMapping.get(token) < precedenceMapping.get(operators.peek())) {
+                if (token.equals("}")) {
+                    while (!operators.peek().equals("{")) {
+                        postFix.append(operators.pop() + " ");
+                    }
+                    operators.pop();
+                    continue;
+                }
+
+                // special case. we check the subtraction operator, if it is next to nothing, if it is, then we flag it as NEG, so it's a negation.
+                if (token.equals("-")){
+                    // now we must determine whether this is just a minus operator, or the negation. if it's a negation, we flag it with NEG.
+                    // it is a negation if it the thing to the left is NOT a number
+                    if (i == 0 || isOperator(tokens[i - 1])){
+                        System.out.println("WE HAVE A NEGATION. ");
+                        token = "NEG";
+                    }
+                }
+                // now we go and get the higher precedence operators, or even precedence ones who showed up earlier off the stack.
+                while (!operators.isEmpty() && precedenceMapping.get(token) <= precedenceMapping.get(operators.peek())) {
                     postFix.append(operators.pop() + " ");
                 }
                 operators.push(token);
             }
+            // if it was just a number, not operator, just slap it in the string.
             else {
-                // If it's a number or variable, just append to the result
+                // Append numbers or variables directly
                 postFix.append(token + " ");
             }
         }
 
-        // now that we're done, we just empty the stack of operators.
-        while(!operators.isEmpty()){
+        // Empty the operator stack at the end.
+        while (!operators.isEmpty()) {
             postFix.append(operators.pop() + " ");
         }
+
         return postFix.toString();
     }
 
-    // TODO: make a function which takes in a token(operator) and then the stack, and determines what to do.
-    //              maybe we have a unary flag set. that way we know that
+    private static String evaluate(Stack<String> nums, String operator){
+
+        double result;
+        switch (operator) {
+            case "+" -> result = Double.parseDouble(nums.pop()) + Double.parseDouble(nums.pop());
+            case "-" -> {
+                double second = Double.parseDouble(nums.pop());
+                result = Double.parseDouble(nums.pop()) - second;
+            }
+            case "*" -> result = Double.parseDouble(nums.pop()) * Double.parseDouble(nums.pop());
+            case "/" ->
+                    {
+                        double denom = Double.parseDouble(nums.pop());
+                        result = Double.parseDouble(nums.pop()) / denom;
+                    }
+            case "NEG" -> result = -Double.parseDouble(nums.pop());
+            case "^" -> {
+                double exp = Double.parseDouble(nums.pop());
+                result = Math.pow(Double.parseDouble(nums.pop()), exp);
+            }
+            case "SQRT" -> result = Math.sqrt(Double.parseDouble(nums.pop()));
+            case "LOG" -> result = Math.log10(Double.parseDouble(nums.pop()));
+            case "LN" -> result = Math.log(Double.parseDouble(nums.pop()));
+            case "SIN" -> result = Math.sin(Double.parseDouble(nums.pop()));
+            case "ARCSIN" -> result = Math.asin(Double.parseDouble(nums.pop()));
+            case "COS" -> result = Math.cos(Double.parseDouble(nums.pop()));
+            case "ARCCOS" -> result = Math.acos(Double.parseDouble(nums.pop()));
+            case "TAN" -> result = Math.tan(Double.parseDouble(nums.pop()));
+            case "ARCTAN" -> result = Math.atan(Double.parseDouble(nums.pop()));
+            // now into the messy stuff
+            case "CSC" -> result = 1 / Math.sin(Double.parseDouble(nums.pop()));
+            case "ARCCSC" -> result = Math.asin(1 / Double.parseDouble(nums.pop()));
+            case "SEC" -> result = 1 / Math.cos(Double.parseDouble(nums.pop()));
+            case "ARCSEC" -> result = Math.acos(1 / Double.parseDouble(nums.pop()));
+            case "COT" -> result = 1 / Math.tan(Double.parseDouble(nums.pop()));
+            case "ARCCOT" -> result = Math.atan(1 / Double.parseDouble(nums.pop()));
+            default -> {
+                return "SYNTAX ERROR";
+            }
+        }
+        return Double.toString(result);
+    }
 
     public static String evaluateExpression(String expression) {
         String postFix = convertToPostFix(expression);
@@ -109,11 +157,18 @@ public class Computations {
 
         double result = 0;
         String[] tokens = postFix.split("\\s+");
+        for (int i = 0; i < tokens.length; i++) {
 
+            String token = tokens[i];
+            if (isOperator(token)){
+                myNums.push(evaluate(myNums, token));
+            }
+            else
+                myNums.push(token);
+        }
 
+        // TODO: fix errors with consecutive negations perhaps.
 
-
-
-        return postFix;
+        return myNums.pop();
     }
 }

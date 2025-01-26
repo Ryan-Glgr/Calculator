@@ -1,0 +1,6 @@
+Calculator can be ran quite easily. Enter into a terminal on any machine with Java 8+
+installed. Navigate to the directory where the project has been stored and simply compile Main.java using
+javac Main.java. After this, you can just run the program using "java Main.java".
+
+To use the calculator, simply input an expression using the given buttons, or by typing. Important note, when typing
+in an expression, spaces must be present between numbers, operators, etc.

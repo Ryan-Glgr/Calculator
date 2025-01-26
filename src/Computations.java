@@ -50,7 +50,6 @@ public class Computations {
 
         for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i];
-            System.out.println("TOKEN " + token + " i = " + i);
 
             if (isOperator(token)) {
                 // Handle parentheses and curly braces specially
@@ -86,7 +85,6 @@ public class Computations {
                     // now we must determine whether this is just a minus operator, or the negation. if it's a negation, we flag it with NEG.
                     // it is a negation if it the thing to the left is NOT a number
                     if (i == 0 || isOperator(tokens[i - 1])){
-                        System.out.println("WE HAVE A NEGATION. ");
                         token = "NEG";
                     }
                 }
@@ -158,8 +156,6 @@ public class Computations {
 
         try {
             String postFix = convertToPostFix(expression);
-            System.out.println(postFix);
-
             Stack<String> myNums = new Stack<>();
             String[] tokens = postFix.split("\\s+");
             for (int i = 0; i < tokens.length; i++) {

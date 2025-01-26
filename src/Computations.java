@@ -55,6 +55,11 @@ public class Computations {
             if (isOperator(token)) {
                 // Handle parentheses and curly braces specially
                 if (token.equals("(") || token.equals("{")) {
+
+                    // if were are not at the first index, obviously. and also the last token is not an operator, so it's a number. we are going to slap a * in because we're doing multiplication in that case.
+                    if (i != 0 && !isOperator(tokens[i - 1])) {
+                        operators.push("*");
+                    }
                     operators.push(token);
                     continue;
                 }
@@ -150,25 +155,27 @@ public class Computations {
     }
 
     public static String evaluateExpression(String expression) {
-        String postFix = convertToPostFix(expression);
-        System.out.println(postFix);
 
-        Stack<String> myNums = new Stack<>();
+        try {
+            String postFix = convertToPostFix(expression);
+            System.out.println(postFix);
 
-        double result = 0;
-        String[] tokens = postFix.split("\\s+");
-        for (int i = 0; i < tokens.length; i++) {
+            Stack<String> myNums = new Stack<>();
+            String[] tokens = postFix.split("\\s+");
+            for (int i = 0; i < tokens.length; i++) {
 
-            String token = tokens[i];
-            if (isOperator(token)){
-                myNums.push(evaluate(myNums, token));
+                String token = tokens[i];
+                if (isOperator(token)) {
+                    myNums.push(evaluate(myNums, token));
+                } else
+                    myNums.push(token);
             }
-            else
-                myNums.push(token);
+
+            return (myNums.size() == 1) ? myNums.pop() : "SYNTAX ERROR";
         }
-
-        // TODO: fix errors with consecutive negations perhaps.
-
-        return myNums.pop();
+        // any kind of strange input will cause us an error and we just return Syntax error like a normal calculator
+        catch(Exception e) {
+            return "SYNTAX ERROR";
+        }
     }
 }

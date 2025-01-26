@@ -15,7 +15,6 @@ public class CalcGUI {
 
     public JButton[] mathFunctionButtons;
 
-
     public CalcGUI() {
         equation = new StringBuilder();
         buttonsWithNamesToChange = new ArrayList<>();
@@ -119,8 +118,8 @@ public class CalcGUI {
         JPanel row = new JPanel();
         row.setLayout(new GridLayout(1, buttonLabels.length));
 
-        for (int i = 0; i < buttonLabels.length; i++) {
-            JButton button = new JButton(buttonLabels[i]);
+        for (String buttonLabel : buttonLabels) {
+            JButton button = new JButton(buttonLabel);
             button.addActionListener(e -> {
                 equation.append(" " + button.getText() + " ");
                 displayArea.setText(equation.toString());

@@ -41,7 +41,8 @@ public class Computations {
         return precedenceMapping.containsKey(op);
     }
 
-    private static String convertToPostFix(String input) {
+    // inspired by shunting yard algorithm, though we are a bit picky about minuses and whatnot.
+    private static String convertToPostFix(String input) throws Exception{
 
         // Split input into tokens based on whitespace trim because we may have leading whitespace.
         String[] tokens = input.trim().split("\\s+");
@@ -55,8 +56,8 @@ public class Computations {
                 // Handle parentheses and curly braces specially
                 if (token.equals("(") || token.equals("{")) {
 
-                    // if were are not at the first index, obviously. and also the last token is not an operator, so it's a number. we are going to slap a * in because we're doing multiplication in that case.
-                    if (i != 0 && !isOperator(tokens[i - 1])) {
+                    // if were are not at the first index, obviously. and also the last token is not an operator, so it's a number. we are going to slap a * in because we're doing multiplication in that case. or if it's a closing parenthesis.
+                    if (i != 0 && (!isOperator(tokens[i - 1]) || tokens[i - 1].equals(")") || tokens[i - 1].equals("}"))) {
                         operators.push("*");
                     }
                     operators.push(token);
@@ -85,7 +86,15 @@ public class Computations {
                     // now we must determine whether this is just a minus operator, or the negation. if it's a negation, we flag it with NEG.
                     // it is a negation if it the thing to the left is NOT a number
                     if (i == 0 || isOperator(tokens[i - 1])){
-                        token = "NEG";
+
+                        // if it's after a parenthesis, do nothing.
+                        if (tokens[i - 1].equals(")") || tokens[i - 1].equals("}")){}
+                        // if we have come across three consecutive minuses, ERROR.
+                        else if (operators.peek().equals("NEG")){
+                            throw new Exception("consecutive negation error");
+                        }
+                        else
+                            token = "NEG";
                     }
                 }
                 // now we go and get the higher precedence operators, or even precedence ones who showed up earlier off the stack.
@@ -166,7 +175,7 @@ public class Computations {
                 } else
                     myNums.push(token);
             }
-
+            // last thing in the stack is our last number. if we don't have exactly one guy left, we have a disaster.
             return (myNums.size() == 1) ? myNums.pop() : "SYNTAX ERROR";
         }
         // any kind of strange input will cause us an error and we just return Syntax error like a normal calculator

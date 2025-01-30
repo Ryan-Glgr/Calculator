@@ -71,7 +71,8 @@ public class CalcGUI {
         JPanel enterButtonPanel = new JPanel(new GridLayout(1, 1));
         JButton enterButton = new JButton("Enter");
         enterButton.addActionListener(e -> {
-            displayArea.setText(Computations.evaluateExpression(equation.toString()));
+            equation.replace(0, equation.length(), Computations.evaluateExpression(equation.toString()));
+            displayArea.setText(equation.toString());
         });
         enterButtonPanel.add(enterButton);
         buttonRows.add(enterButtonPanel);
